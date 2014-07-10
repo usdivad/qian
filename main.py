@@ -17,14 +17,17 @@ data = open("log.txt", "r")
 
 #Regexes for params
 p_date = re.compile("\d{1,2}/\d{1,2}$")
+p_earnings = re.compile("^\+\d+(\.\d+)*(?=\s)")
 p_expenditure = re.compile("^\d+(\.\d+)*(?=\s)")
 p_alcohol = re.compile("beer|wine|whiskey|vodka|gin|rum|tequila|car bomb|cocktail|coca|shot|margarita|drink|anchor")
 p_food = re.compile("breakfast|brunch|lunch|dinner|fruit|food|peanut|ribs|egg|cheese|juice|apple|banana|orange|snack|gyro|pizza|avocado|cream|water|burger|Takoyaki|cafe|smoothie|taco|watermelon|turkey|enchilada|gyro|chicken|lamb|beef|Chinese|Indian|fries")
 p_rent = re.compile("rent|hotel|motel|deposit")
 p_travel = re.compile("taxi|cab|metrocard|sub|transit")
 p_entertainment = re.compile("concert|show|ticket")
+p_home = re.compile("home")
 
 #Counting vars
+earnings = 0
 expenditure = 0
 alcohol = 0
 food = 0
@@ -32,6 +35,7 @@ rent = 0
 other = 0
 travel = 0
 entertainment = 0
+home = 0
 num_days = 0
 num_months = 1
 
@@ -64,22 +68,32 @@ for line in data:
                     alcohol += amt
                 elif re.search(p_rent, line):
                     rent += amt
+                    print line
                 elif re.search(p_travel, line):
                     travel += amt
                 elif re.search(p_entertainment, line):
                     entertainment += amt
+                elif re.search(p_home, line):
+                    home += amt
                 else:
                     other += amt
                     #print line
+            else:
+                ematch = re.search(p_earnings, line)
+                if ematch != None:
+                    amt = float(ematch.group().replace('+', ''))
+                    earnings += amt
 
 num_months = num_days/30.5
 
-print "total: " + str(expenditure)
+print "total earnings: " + str(earnings)
+print "total expenditure: " + str(expenditure)
 print "food: " + str(food)
 print "alcohol: " + str(alcohol)
 print "rent: " + str(rent)
 print "travel: " + str(travel)
 print "entertainment: " + str(entertainment)
+print "home: " + str(home)
 print "other: " + str(other)
 print "avg monthly (" + str(num_days) + " days over 30.5 days/month is " + str(num_months) + " months): " + str(expenditure/num_months)
 

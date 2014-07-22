@@ -23,7 +23,7 @@ p_alcohol = re.compile("beer|wine|whiskey|vodka|gin|rum|tequila|car bomb|cocktai
 p_food = re.compile("breakfast|brunch|lunch|dinner|fruit|food|peanut|ribs|egg|cheese|juice|apple|banana|orange|snack|gyro|pizza|avocado|cream|water|burger|Takoyaki|cafe|smoothie|taco|watermelon|turkey|enchilada|gyro|chicken|lamb|beef|Chinese|Indian|fries")
 p_rent = re.compile("rent|hotel|motel|deposit")
 p_travel = re.compile("taxi|cab|metrocard|sub|transit")
-p_entertainment = re.compile("concert|show|ticket")
+p_entertainment = re.compile("concert|show|ticket|music")
 p_home = re.compile("home")
 
 #Counting vars
@@ -64,25 +64,34 @@ for line in data:
                 expenditure += amt
                 if re.search(p_food, line):
                     food += amt
+                    continue
                 elif re.search(p_alcohol, line):
-                    alcohol += amt
+                    if not re.search(re.compile("drum|wine glasses"), line):
+                        alcohol += amt
+                        print line
+                        continue
                 elif re.search(p_rent, line):
                     rent += amt
-                    print line
+                    continue
                 elif re.search(p_travel, line):
                     travel += amt
+                    continue
                 elif re.search(p_entertainment, line):
                     entertainment += amt
+                    continue
                 elif re.search(p_home, line):
                     home += amt
+                    continue
                 else:
                     other += amt
+                    continue
                     #print line
             else:
                 ematch = re.search(p_earnings, line)
                 if ematch != None:
                     amt = float(ematch.group().replace('+', ''))
                     earnings += amt
+                    #print line
 
 num_months = num_days/30.5
 

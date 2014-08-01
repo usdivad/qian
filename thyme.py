@@ -13,6 +13,7 @@ def time_diff(x, y):
         lower = x
 
     if upper - lower < 60:
+        print str(upper-lower) + ' minutes'
         return upper - lower
     else:
         upper_mins = upper%100
@@ -26,7 +27,7 @@ def time_diff(x, y):
 
         return hrs*60 + mins
 
-print time_diff(1745, 1930)
+print time_diff(1545, 1930)
 
 # #Cmd-line args
 # #e.g. for tour expenses go "python main.py 3/7 3/20"

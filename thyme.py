@@ -34,7 +34,7 @@ def time_diff(x, y):
 
         return hrs*60 + mins
 
-print time_diff(1545, 1930)
+print time_diff(0000, 900)
 
 #Template from main.py
 
@@ -42,7 +42,7 @@ print time_diff(1545, 1930)
 #e.g. for tour expenses go "python main.py 3/7 3/20"
 start_date = [int(i) for i in sys.argv[1].split("/")]
 end_date = [int(i) for i in sys.argv[2].split("/")]
-#print start_date + "-" + end_date
+print str(start_date) + "-" + str(end_date)
 
 #Regexes for params
 p_date = re.compile('\d{1,2}/\d{1,2}$')
@@ -50,10 +50,10 @@ p_timemark = re.compile('^\d+(\.\d+)*(?=\s)')
 
 p_music = re.compile('music')
 p_listen = re.compile('listen|watch|teach|lesson') #consume
-p_rehearsal = re.compile('rehearsal|jam') #public making music but not for audience
-p_performance = re.compile('performance|show') #public playing for an audience
-p_write = re.compile('write|create') #private composing, writing
-p_practice = re.compile('practice') #private practice
+p_rehearsal = re.compile('rehears|jam|soundcheck|birthday') #public making music but not for audience
+p_performance = re.compile('perform|show') #public playing for an audience
+p_write = re.compile('write|create|compose|beat|programming|mix') #private composing, writing
+p_practice = re.compile('practice|drum') #private practice
 p_studio = re.compile('studio')
 
 p_social = re.compile('social')
@@ -71,29 +71,35 @@ num_months = 1
 time_x = 1100 #first entry
 time_y = time_x
 
-music_amt = 0
-listen_amt = 0
-rehearsal_amt = 0
-performance_amt = 0
-write_amt = 0
-practice_amt = 0
-studio_amt = 0
+amts = {
+    'social': 0,
+    'errands': 0,
+    'wash': 0,
+    'travel': 0,
+    'work': 0,
+    'idle': 0,
+    'sleep': 0,
+    'eat': 0,
+    'other': 0
+}
 
-social_amt = 0
-errands_amt = 0
-wash_amt = 0
-travel_amt = 0
-work_amt = 0
-idle_amt = 0
-sleep_amt = 0
-eat_amt = 0
-other_amt = 0
+music_amts = {
+    'other': 0,
+    'listen': 0,
+    'rehearsal': 0,
+    'performance': 0,
+    'write': 0,
+    'practice': 0,
+    'studio': 0
+}
+
+num_performances = 0
 
 #Parse lines
 data = open('log_thyme.txt', 'r')
 begin_counting = False
 
-for line in data:
+for line in data: #note we go backwards in time
     #it's a dateline
     if re.search(p_date, line):
         num_days += 1
@@ -101,10 +107,12 @@ for line in data:
         #begin_counting = in_date_range(date, start_date, end_date)
         if begin_counting == False:
             if (date[0] == end_date[0] and date[1] <= end_date[1]) or (date[0] < end_date[0]):
+            #if (date[0] > start_date[0]) or (date[0] == start_date[0] and date[1] >= start_date[1]): 
                 begin_counting = True
                 print "hooray! " + line
         else:
             if (date[0] == start_date[0] and date[1] <= start_date[1]) or (date[0] < start_date[0]):
+            #if (date[0] > end_date[0]) or (date[0] == end_date[0] and date[1] >= end_date[1]):
                 begin_counting = False
                 print "we're done " + line + " "
                 break
@@ -121,58 +129,68 @@ for line in data:
                 amt = time_diff(time_x, time_y)
 
                 if re.search(p_music, line):
-                    music_amt += amt
+                    #amts['music'] += amt
                     if re.search(p_listen, line):
-                        listen_amt += amt
+                        music_amts['listen'] += amt
                         continue
                     elif re.search(p_rehearsal, line):
-                        rehearsal_amt += amt
+                        music_amts['rehearsal'] += amt
                         continue
                     elif re.search(p_performance, line):
-                        performance_amt += amt
+                        music_amts['performance'] += amt
+                        num_performances += 1
                         continue
                     elif re.search(p_write, line):
-                        write_amt += amt
+                        music_amts['write'] += amt
                         continue
                     elif re.search(p_practice, line):
-                        practice_amt += amt
+                        music_amts['practice'] += amt
                         continue
                     elif re.search(p_studio, line):
-                        studio_amt += amt
+                        music_amts['studio'] += amt
                         continue
                     else:
+                        music_amts['other'] += amt
                         print line
                     continue
                 elif re.search(p_social, line):
-                    social_amt += amt
+                    amts['social'] += amt
                     continue
                 elif re.search(p_errands, line):
-                    errands_amt += amt
+                    amts['errands'] += amt
                     continue
                 elif re.search(p_wash, line):
-                    wash_amt += amt
+                    amts['wash'] += amt
                     continue
                 elif re.search(p_travel, line):
-                    travel_amt += amt
+                    amts['travel'] += amt
                     continue
                 elif re.search(p_work, line):
-                    work_amt += amt
+                    amts['work'] += amt
                     continue
                 elif re.search(p_idle, line):
-                    idle_amt += amt
+                    amts['idle'] += amt
                     continue
                 elif re.search(p_sleep, line):
-                    sleep_amt += amt
+                    amts['sleep'] += amt
                     continue
                 elif re.search(p_eat, line):
-                    eat_amt += amt
+                    amts['eat'] += amt
                     continue
                 else:
-                    other_amt += amt
+                    amts['other'] += amt
                     #print line
                     continue
 
-for amt in [music_amt, social_amt, errands_amt]:
-    print ''
+amts = dict(amts.items() + {'music': sum(music_amts.values())}.items())
+for amt in amts:
+    print str(amt) + ': ' + str(amts[amt]/60) + ' hours'
+
+print ''
+
+for amt in music_amts:
+    print 'music_' + str(amt) + ': ' + str(music_amts[amt]/60) + ' hours' + '(' 
+
+print str(num_performances) + ' performances'
 
 num_months = num_days/30.5

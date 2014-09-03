@@ -43,7 +43,6 @@ num_months = 1
 begin_counting = False
 for line in data:
     if re.search(p_date, line):
-        num_days += 1
         date = [int(i) for i in re.search(p_date, line).group().split("/")]
         #begin_counting = in_date_range(date, start_date, end_date)
         if begin_counting == False:
@@ -51,6 +50,7 @@ for line in data:
                 begin_counting = True
                 print "hooray! " + line
         else:
+            num_days += 1
             if (date[0] == start_date[0] and date[1] <= start_date[1]) or (date[0] < start_date[0]):
                 begin_counting = False
                 print "we're done " + line + " "
@@ -68,7 +68,7 @@ for line in data:
                 elif re.search(p_alcohol, line):
                     if not re.search(re.compile("drum|wine glasses"), line):
                         alcohol += amt
-                        print line
+                        #print line
                         continue
                 elif re.search(p_rent, line):
                     rent += amt
@@ -91,7 +91,7 @@ for line in data:
                 if ematch != None:
                     amt = float(ematch.group().replace('+', ''))
                     earnings += amt
-                    #print line
+                    print line
 
 num_months = num_days/30.5
 

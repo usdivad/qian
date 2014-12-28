@@ -8,33 +8,33 @@
 import re
 import sys
 
-def time_diff(x, y):
-    diff = 0
-    upper = 0
-    lower = 0
-    if x > y:
-        upper = x
-        lower = y
-    else:
-        upper = y
-        lower = x
+def time_diff(t1, t2):
+    diff = abs(t2 - t1)
 
-    if upper - lower < 60:
-        #print str(upper-lower) + ' minutes'
-        return upper - lower
+    # e.g. 0900, 0945
+    if diff < 60:
+        print str(diff) + ' minutes'
+        return t2 - t1
     else:
-        upper_mins = upper%100
-        lower_mins = lower%100
-        upper_hrs = upper - upper_mins
-        lower_hrs = lower  - lower_mins
+        t2_mins = t2 % 100
+        t1_mins = t1 % 100
+        t2_hrs = t2 - t2_mins
+        t1_hrs = t1  - t1_mins
+        mins = t2_mins + (60-t1_mins)
+        hrs = abs(((t2_hrs-t1_hrs)/100) - 1)
 
-        mins = upper_mins + (60-lower_mins)
-        hrs = ((upper_hrs-lower_hrs)/100) - 1
-        #print '{} hours and {} minutes'.format(str(hrs), str(mins))
+        if t1 > t2:
+            hrs = 24 - hrs
+
+        print '{} hours and {} minutes'.format(str(hrs), str(mins))
 
         return hrs*60 + mins
 
-print time_diff(0000, 900)
+# print time_diff(2200, 0100) / 60
+
+assert time_diff(900, 930) == 30
+assert time_diff(2230, 145) == time_diff(1030, 1345)
+
 
 #Template from main.py
 
@@ -98,6 +98,10 @@ num_performances = 0
 #Parse lines
 data = open('log_thyme.txt', 'r')
 begin_counting = False
+timemark_encountered = False
+first_timemark_today = 0
+last_timemark_yesterday = 2359
+last_category = 'sleep'
 
 for line in data: #note we go backwards in time
     #it's a dateline
@@ -125,6 +129,11 @@ for line in data: #note we go backwards in time
                 time_new = float(match.group()) #default group(0)
                 time_x = time_y
                 time_y = time_new
+
+                # if not timemark_encountered:
+                #     first_timemark_today = time_new
+
+
 
                 amt = time_diff(time_x, time_y)
 
@@ -183,13 +192,18 @@ for line in data: #note we go backwards in time
                     continue
 
 amts = dict(amts.items() + {'music': sum(music_amts.values())}.items())
+total_mins = sum(amts.values())
+total_music = amts['music']
+print str(num_days)
+print str(num_days*24) + ' vs ' + str(total_mins/60)
+
 for amt in amts:
-    print str(amt) + ': ' + str(amts[amt]/60) + ' hours'
+    print str(amt) + ': ' + str(amts[amt]/60) + ' hours (' + str(round((amts[amt]/60)/num_days, 2)) + ' hrs/day, ' + str(round(100*(amts[amt]/60)/(total_mins/60), 2)) + '% of total)'
 
 print ''
 
 for amt in music_amts:
-    print 'music_' + str(amt) + ': ' + str(music_amts[amt]/60) + ' hours' + '(' 
+    print 'music_' + str(amt) + ': ' + str(music_amts[amt]/60) + ' hours (' + str(round((music_amts[amt]/60)/num_days, 2)) + ' hrs/day, ' + str(round(100*(music_amts[amt]/60)/(total_music/60), 2)) + '% of all music)'
 
 print str(num_performances) + ' performances'
 

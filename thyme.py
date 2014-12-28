@@ -8,29 +8,28 @@
 import re
 import sys
 
-def time_diff(t1, t2):
-    diff = abs(t2 - t1)
+def time_diff(t0, t1):
+    diff = abs(t1 - t0)
 
     # e.g. 0900, 0945
     if diff < 60:
-        print str(diff) + ' minutes'
-        return t2 - t1
+        # print str(diff) + ' minutes'
+        return t1 - t0
     else:
-        t2_mins = t2 % 100
         t1_mins = t1 % 100
-        t2_hrs = t2 - t2_mins
-        t1_hrs = t1  - t1_mins
-        mins = t2_mins + (60-t1_mins)
-        hrs = abs(((t2_hrs-t1_hrs)/100) - 1)
+        t0_mins = t0 % 100
+        t1_hrs = t1 - t1_mins
+        t0_hrs = t0  - t0_mins
+        mins = t1_mins + (60-t0_mins)
+        hrs = abs(((t1_hrs-t0_hrs)/100) - 1)
 
-        if t1 > t2:
+        if t0 > t1:
             hrs = 24 - hrs
 
-        print '{} hours and {} minutes'.format(str(hrs), str(mins))
+        # print '{} hours and {} minutes'.format(str(hrs), str(mins))
 
         return hrs*60 + mins
 
-# print time_diff(2200, 0100) / 60
 
 assert time_diff(900, 930) == 30
 assert time_diff(2230, 145) == time_diff(1030, 1345)
@@ -68,8 +67,8 @@ p_eat = re.compile('eat|dinner|breakfast|lunch')
 #Counting vars
 num_days = 0
 num_months = 1
-time_x = 1100 #first entry
-time_y = time_x
+t0 = None
+t1 = None
 
 amts = {
     'social': 0,
@@ -80,6 +79,7 @@ amts = {
     'idle': 0,
     'sleep': 0,
     'eat': 0,
+    # 'prgm': 0,
     'other': 0
 }
 
@@ -102,21 +102,36 @@ timemark_encountered = False
 first_timemark_today = 0
 last_timemark_yesterday = 2359
 last_category = 'sleep'
+current_category = 'sleep'
 
-for line in data: #note we go backwards in time
+#reverse order of dates
+data_reversed = ['init']
+date_chunk = ['init']
+for line in data:
+    if re.search(p_date, line):
+        date_chunk.extend(data_reversed)
+        data_reversed = date_chunk
+        date_chunk = [line]
+        print data_reversed
+    else:
+        date_chunk.append(line)
+
+print ''.join(data_reversed)
+
+for line in data_reversed: #note we go FORWARDS in time
     #it's a dateline
     if re.search(p_date, line):
-        num_days += 1
         date = [int(i) for i in re.search(p_date, line).group().split("/")]
         #begin_counting = in_date_range(date, start_date, end_date)
         if begin_counting == False:
-            if (date[0] == end_date[0] and date[1] <= end_date[1]) or (date[0] < end_date[0]):
-            #if (date[0] > start_date[0]) or (date[0] == start_date[0] and date[1] >= start_date[1]): 
+            # if (date[0] == end_date[0] and date[1] <= end_date[1]) or (date[0] < end_date[0]):
+            if (date[0] > start_date[0]) or (date[0] == start_date[0] and date[1] >= start_date[1]): 
                 begin_counting = True
                 print "hooray! " + line
         else:
-            if (date[0] == start_date[0] and date[1] <= start_date[1]) or (date[0] < start_date[0]):
-            #if (date[0] > end_date[0]) or (date[0] == end_date[0] and date[1] >= end_date[1]):
+            num_days += 1
+            # if (date[0] == start_date[0] and date[1] <= start_date[1]) or (date[0] < start_date[0]):
+            if (date[0] > end_date[0]) or (date[0] == end_date[0] and date[1] >= end_date[1]):
                 begin_counting = False
                 print "we're done " + line + " "
                 break
@@ -127,63 +142,67 @@ for line in data: #note we go backwards in time
             match = re.search(p_timemark, line) #equiv to match = p_timemark.search(line)
             if match != None:
                 time_new = float(match.group()) #default group(0)
-                time_x = time_y
-                time_y = time_new
+                #initialize
+                if t0 == None and t1 == None:
+                    t1 = time_new
+                    continue
 
-                # if not timemark_encountered:
-                #     first_timemark_today = time_new
+                #update
+                t0 = t1
+                t1 = time_new
+                amt = time_diff(t0, t1)
+                print 't0: {}, t1:{}, amt:{}'.format(str(t0), str(t1), str(amt))
 
+                last_category = current_category
+                current_category = line
 
-
-                amt = time_diff(time_x, time_y)
-
-                if re.search(p_music, line):
+                if re.search(p_music, last_category):
                     #amts['music'] += amt
-                    if re.search(p_listen, line):
+                    if re.search(p_listen, last_category):
                         music_amts['listen'] += amt
                         continue
-                    elif re.search(p_rehearsal, line):
+                    elif re.search(p_rehearsal, last_category):
                         music_amts['rehearsal'] += amt
                         continue
-                    elif re.search(p_performance, line):
+                    elif re.search(p_performance, last_category):
                         music_amts['performance'] += amt
                         num_performances += 1
                         continue
-                    elif re.search(p_write, line):
+                    elif re.search(p_write, last_category):
                         music_amts['write'] += amt
                         continue
-                    elif re.search(p_practice, line):
+                    elif re.search(p_practice, last_category):
                         music_amts['practice'] += amt
                         continue
-                    elif re.search(p_studio, line):
+                    elif re.search(p_studio, last_category):
                         music_amts['studio'] += amt
                         continue
                     else:
                         music_amts['other'] += amt
-                        print line
+                        print last_category
                     continue
-                elif re.search(p_social, line):
+                elif re.search(p_social, last_category):
                     amts['social'] += amt
                     continue
-                elif re.search(p_errands, line):
+                elif re.search(p_errands, last_category):
                     amts['errands'] += amt
                     continue
-                elif re.search(p_wash, line):
+                elif re.search(p_wash, last_category):
                     amts['wash'] += amt
                     continue
-                elif re.search(p_travel, line):
+                elif re.search(p_travel, last_category):
                     amts['travel'] += amt
                     continue
-                elif re.search(p_work, line):
+                elif re.search(p_work, last_category):
                     amts['work'] += amt
                     continue
-                elif re.search(p_idle, line):
+                elif re.search(p_idle, last_category):
                     amts['idle'] += amt
                     continue
-                elif re.search(p_sleep, line):
+                elif re.search(p_sleep, last_category):
                     amts['sleep'] += amt
                     continue
-                elif re.search(p_eat, line):
+                elif re.search(p_eat, last_category):
                     amts['eat'] += amt
                     continue
                 else:

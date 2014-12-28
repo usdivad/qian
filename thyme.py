@@ -37,12 +37,6 @@ assert time_diff(2230, 145) == time_diff(1030, 1345)
 
 #Template from main.py
 
-#Cmd-line args
-#e.g. for tour expenses go "python main.py 3/7 3/20"
-start_date = [int(i) for i in sys.argv[1].split("/")]
-end_date = [int(i) for i in sys.argv[2].split("/")]
-print str(start_date) + "-" + str(end_date)
-
 #Regexes for params
 p_date = re.compile('\d{1,2}/\d{1,2}$')
 p_timemark = re.compile('^\d+(\.\d+)*(?=\s)')
@@ -103,20 +97,33 @@ first_timemark_today = 0
 last_timemark_yesterday = 2359
 last_category = 'sleep'
 current_category = 'sleep'
+start_date = []
+end_date = []
 
 #reverse order of dates
 data_reversed = ['init']
 date_chunk = ['init']
 for line in data:
     if re.search(p_date, line):
+        # list manip
         date_chunk.extend(data_reversed)
         data_reversed = date_chunk
         date_chunk = [line]
-        print data_reversed
+
+        # setting start and end dates
+        if len(end_date) < 1:
+            end_date = [int(i) for i in line.strip().split("/")]
+        start_date = [int(i) for i in line.strip().split("/")]
     else:
         date_chunk.append(line)
 
 print ''.join(data_reversed)
+
+#Cmd-line args
+if len(sys.argv) > 2:
+    start_date = [int(i) for i in sys.argv[1].split("/")]
+    end_date = [int(i) for i in sys.argv[2].split("/")]
+print str(start_date) + "-" + str(end_date)
 
 for line in data_reversed: #note we go FORWARDS in time
     #it's a dateline
@@ -151,7 +158,7 @@ for line in data_reversed: #note we go FORWARDS in time
                 t0 = t1
                 t1 = time_new
                 amt = time_diff(t0, t1)
-                print 't0: {}, t1:{}, amt:{}'.format(str(t0), str(t1), str(amt))
+                # print 't0: {}, t1:{}, amt:{}'.format(str(t0), str(t1), str(amt))
 
                 last_category = current_category
                 current_category = line
@@ -213,7 +220,7 @@ for line in data_reversed: #note we go FORWARDS in time
 amts = dict(amts.items() + {'music': sum(music_amts.values())}.items())
 total_mins = sum(amts.values())
 total_music = amts['music']
-print str(num_days)
+print str(num_days) + ' days total'
 print str(num_days*24) + ' vs ' + str(total_mins/60)
 
 for amt in amts:

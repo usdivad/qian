@@ -49,6 +49,7 @@ p_write = re.compile('write|create|compose|beat|programming|mix') #private compo
 p_practice = re.compile('practice|drum') #private practice
 p_studio = re.compile('studio')
 
+p_entertainment = re.compile('watch|movie|tv')
 p_social = re.compile('social')
 p_errands = re.compile('errand')
 p_wash = re.compile('shower|brush|wash')
@@ -57,6 +58,8 @@ p_work = re.compile('work')
 p_idle = re.compile('idle|watch|isle')
 p_sleep = re.compile('sleep|nap')
 p_eat = re.compile('eat|dinner|breakfast|lunch')
+p_prgm = re.compile('prgm|program')
+p_other = re.compile('.*')
 
 #Counting vars
 num_days = 0
@@ -64,18 +67,58 @@ num_months = 1
 t0 = None
 t1 = None
 
-amts = {
-    'social': 0,
-    'errands': 0,
-    'wash': 0,
-    'travel': 0,
-    'work': 0,
-    'idle': 0,
-    'sleep': 0,
-    'eat': 0,
-    'prgm': 0,
-    'other': 0
+categories = {
+    'music': { 'amt': 0,
+               'regex': p_music
+             },
+    'social': { 'amt': 0,
+                'regex': p_social
+              },
+    'errands': { 'amt': 0,
+                'regex': p_errands
+              },
+    'wash': { 'amt': 0,
+                'regex': p_wash
+              },
+    'travel': { 'amt': 0,
+                'regex': p_travel
+              },
+    'work': { 'amt': 0,
+                'regex': p_work
+              },
+    'idle': { 'amt': 0,
+                'regex': p_idle
+              },
+    'sleep': { 'amt': 0,
+                'regex': p_sleep
+              },
+    'eat': { 'amt': 0,
+                'regex': p_eat
+              },
+    'prgm': { 'amt': 0,
+                'regex': p_prgm
+              },
+    'entertainment': { 'amt': 0,
+                'regex': p_entertainment
+              },
+    'other': { 'amt': 0,
+                'regex': p_other
+              }
 }
+
+# amts = {
+#     'social': 0,
+#     'errands': 0,
+#     'wash': 0,
+#     'travel': 0,
+#     'work': 0,
+#     'idle': 0,
+#     'sleep': 0,
+#     'eat': 0,
+#     'prgm': 0,
+#     'entertainment': 0,
+#     'other': 0
+# }
 
 music_amts = {
     'other': 0,
@@ -98,6 +141,7 @@ start_date = []
 end_date = []
 sleep_times = []
 x_amt = 0
+total_mins = 0
 
 #reverse order of dates
 data_reversed = ['init']
@@ -116,7 +160,7 @@ for line in data:
     else:
         date_chunk.append(line)
 
-print ''.join(data_reversed)
+# print ''.join(data_reversed)
 
 #Cmd-line args
 if len(sys.argv) > 2:
@@ -157,82 +201,79 @@ for line in data_reversed: #note we go FORWARDS in time
                 t0 = t1
                 t1 = time_new
                 amt = time_diff(t0, t1)
+                total_mins += amt
                 # print 't0: {}, t1:{}, amt:{}'.format(str(t0), str(t1), str(amt))
 
                 last_category = current_category
                 current_category = line
 
-                if re.search(p_music, last_category):
-                    #amts['music'] += amt
-                    if re.search(p_listen, last_category):
-                        music_amts['listen'] += amt
+                #check matching cats
+                checked_categories = []
+                for key in categories:
+                    category = categories[key]
+                    if key == 'other':
                         continue
-                    elif re.search(p_rehearsal, last_category):
-                        music_amts['rehearsal'] += amt
-                        continue
-                    elif re.search(p_performance, last_category):
-                        music_amts['performance'] += amt
-                        num_performances += 1
-                        continue
-                    elif re.search(p_write, last_category):
-                        music_amts['write'] += amt
-                        continue
-                    elif re.search(p_practice, last_category):
-                        music_amts['practice'] += amt
-                        continue
-                    elif re.search(p_studio, last_category):
-                        music_amts['studio'] += amt
-                        continue
-                    else:
-                        music_amts['other'] += amt
-                        print last_category
-                    continue
-                elif re.search(p_social, last_category):
-                    amts['social'] += amt
-                    if 'x' in last_category:
-                        x_amt += 1
-                    continue
-                elif re.search(p_errands, last_category):
-                    amts['errands'] += amt
-                    continue
-                elif re.search(p_wash, last_category):
-                    amts['wash'] += amt
-                    continue
-                elif re.search(p_travel, last_category):
-                    amts['travel'] += amt
-                    continue
-                elif re.search(p_work, last_category):
-                    # amts['work'] += amt
-                    amts['eat'] += 1
-                    amt -= 1
-                    amts['prgm'] += amt * 0.7
-                    amts['idle'] += amt * 0.3
-                    continue
-                elif re.search(p_idle, last_category):
-                    amts['idle'] += amt
-                    continue
-                elif re.search(p_sleep, last_category):
-                    amts['sleep'] += amt
-                    if 'nap' not in last_category:
-                        sleep_times.append(time_diff(1200, t0)) #offset from 12pm
-                    continue
-                elif re.search(p_eat, last_category):
-                    amts['eat'] += amt
-                    continue
-                else:
-                    amts['other'] += amt
-                    #print line
-                    continue
+                    if re.search(category['regex'], last_category):
+                        checked_categories.append(key)
 
-amts = dict(amts.items() + {'music': sum(music_amts.values())}.items())
-total_mins = sum(amts.values())
-total_music = amts['music']
+                if len(checked_categories) < 1:
+                    checked_categories.append('other')
+
+                #iterate through checked cats
+                print 'keys:'
+                for key in checked_categories:
+                    print key
+                    category = categories[key]
+                    amt_portion = amt / len(checked_categories)
+                    #handling special cases
+                    if key == 'music':
+                        if re.search(p_listen, last_category):
+                            music_amts['listen'] += amt_portion
+                        elif re.search(p_rehearsal, last_category):
+                            music_amts['rehearsal'] += amt_portion                                
+                        elif re.search(p_performance, last_category):
+                            music_amts['performance'] += amt_portion
+                            num_performances += 1
+                        elif re.search(p_write, last_category):
+                            music_amts['write'] += amt_portion
+                        elif re.search(p_practice, last_category):
+                            music_amts['practice'] += amt_portion
+                        elif re.search(p_studio, last_category):
+                            music_amts['studio'] += amt_portion
+                        else:
+                            music_amts['other'] += amt_portion
+                            print last_category
+                        category['amt'] += amt_portion
+                    elif key == 'social':
+                        if 'x' in last_category:
+                            x_amt += 1
+                        category['amt'] += amt_portion
+                    elif key == 'work':
+                        if 0.15 * amt_portion > 60:
+                            categories['eat']['amt'] += 60
+                            amt_portion -= 60
+                        categories['prgm']['amt'] += amt_portion * 0.7
+                        categories['idle']['amt'] += amt_portion * 0.3
+                    elif key == 'sleep':
+                        if 'nap' not in last_category:
+                            sleep_times.append(time_diff(1200, t0)) #offset from 12pm                      
+                        category['amt'] += amt_portion
+                    # elif key == 'other':
+                    #     if len(checked_categories) == 1:
+                    #         category['amt'] += amt_portion
+                    else: #default case
+                        category['amt'] += amt_portion
+
+#any final computations
+# categories['music']['amt'] = sum(music_amts.values()) #unnecessary
+total_music = categories['music']['amt']
 
 print str(num_days) + ' days total'
 print str(num_days*24) + ' vs ' + str(total_mins/60)
 
-for amt in amts:
-    print str(amt) + ': ' + str(amts[amt]/60) + ' hours (' + str(round((amts[amt]/60)/num_days, 2)) + ' hrs/day, ' + str(round(100*(amts[amt]/60)/(total_mins/60), 2)) + '% of total)'
+for key in categories:
+    amt = categories[key]['amt']
+    print key + ': ' + str(amt/60) + ' hours (' + str(round((amt/60)/num_days, 2)) + ' hrs/day, ' + str(round(100*(amt/60)/(total_mins/60), 2)) + '% of total)'
 
 print ''
 
@@ -247,3 +288,9 @@ avg_sleep_time = [int(avg_sleep_offset-12), int(((avg_sleep_offset-12)%1)*60)]
 print 'avg sleep time of day: ' + ':'.join(str(i) for i in avg_sleep_time)
 
 num_months = num_days/30.5
+
+'''
+todo:
+    - dict it up
+
+'''

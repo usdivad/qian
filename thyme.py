@@ -73,7 +73,7 @@ amts = {
     'idle': 0,
     'sleep': 0,
     'eat': 0,
-    # 'prgm': 0,
+    'prgm': 0,
     'other': 0
 }
 
@@ -89,16 +89,15 @@ music_amts = {
 
 num_performances = 0
 
-#Parse lines
+#Params for parsing
 data = open('log_thyme.txt', 'r')
 begin_counting = False
-timemark_encountered = False
-first_timemark_today = 0
-last_timemark_yesterday = 2359
 last_category = 'sleep'
 current_category = 'sleep'
 start_date = []
 end_date = []
+sleep_times = []
+x_amt = 0
 
 #reverse order of dates
 data_reversed = ['init']
@@ -190,6 +189,8 @@ for line in data_reversed: #note we go FORWARDS in time
                     continue
                 elif re.search(p_social, last_category):
                     amts['social'] += amt
+                    if 'x' in last_category:
+                        x_amt += 1
                     continue
                 elif re.search(p_errands, last_category):
                     amts['errands'] += amt
@@ -201,13 +202,19 @@ for line in data_reversed: #note we go FORWARDS in time
                     amts['travel'] += amt
                     continue
                 elif re.search(p_work, last_category):
-                    amts['work'] += amt
+                    # amts['work'] += amt
+                    amts['eat'] += 1
+                    amt -= 1
+                    amts['prgm'] += amt * 0.7
+                    amts['idle'] += amt * 0.3
                     continue
                 elif re.search(p_idle, last_category):
                     amts['idle'] += amt
                     continue
                 elif re.search(p_sleep, last_category):
                     amts['sleep'] += amt
+                    if 'nap' not in last_category:
+                        sleep_times.append(time_diff(1200, t0)) #offset from 12pm
                     continue
                 elif re.search(p_eat, last_category):
                     amts['eat'] += amt
@@ -220,6 +227,7 @@ for line in data_reversed: #note we go FORWARDS in time
 amts = dict(amts.items() + {'music': sum(music_amts.values())}.items())
 total_mins = sum(amts.values())
 total_music = amts['music']
+
 print str(num_days) + ' days total'
 print str(num_days*24) + ' vs ' + str(total_mins/60)
 
@@ -232,5 +240,10 @@ for amt in music_amts:
     print 'music_' + str(amt) + ': ' + str(music_amts[amt]/60) + ' hours (' + str(round((music_amts[amt]/60)/num_days, 2)) + ' hrs/day, ' + str(round(100*(music_amts[amt]/60)/(total_music/60), 2)) + '% of all music)'
 
 print str(num_performances) + ' performances'
+print str(x_amt) + ' x\'s'
+avg_sleep_offset = (sum(sleep_times) / len(sleep_times)) / 60
+avg_sleep_time = [int(avg_sleep_offset-12), int(((avg_sleep_offset-12)%1)*60)]
+# print sleep_times
+print 'avg sleep time of day: ' + ':'.join(str(i) for i in avg_sleep_time)
 
 num_months = num_days/30.5

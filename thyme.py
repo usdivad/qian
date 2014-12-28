@@ -232,7 +232,8 @@ for line in data_reversed: #note we go FORWARDS in time
                         elif re.search(p_rehearsal, last_category):
                             music_amts['rehearsal'] += amt_portion                                
                         elif re.search(p_performance, last_category):
-                            music_amts['performance'] += amt_portion
+                            categories['social']['amt'] += amt_portion * 0.75
+                            music_amts['performance'] += amt_portion * (1 - 0.75)
                             num_performances += 1
                         elif re.search(p_write, last_category):
                             music_amts['write'] += amt_portion
@@ -243,7 +244,7 @@ for line in data_reversed: #note we go FORWARDS in time
                         else:
                             music_amts['other'] += amt_portion
                             print last_category
-                        category['amt'] += amt_portion
+                        # category['amt'] += amt_portion
                     elif key == 'social':
                         if 'x' in last_category:
                             x_amt += 1
@@ -253,7 +254,7 @@ for line in data_reversed: #note we go FORWARDS in time
                             categories['eat']['amt'] += 60
                             amt_portion -= 60
                         categories['prgm']['amt'] += amt_portion * 0.7
-                        categories['idle']['amt'] += amt_portion * 0.3
+                        categories['idle']['amt'] += amt_portion * (1 - 0.7)
                     elif key == 'sleep':
                         if 'nap' not in last_category:
                             sleep_times.append(time_diff(1200, t0)) #offset from 12pm                      
@@ -265,7 +266,7 @@ for line in data_reversed: #note we go FORWARDS in time
                         category['amt'] += amt_portion
 
 #any final computations
-# categories['music']['amt'] = sum(music_amts.values()) #unnecessary
+categories['music']['amt'] = sum(music_amts.values())
 total_music = categories['music']['amt']
 
 print str(num_days) + ' days total'

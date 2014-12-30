@@ -48,6 +48,7 @@ p_performance = re.compile('perform|show') #public playing for an audience
 p_write = re.compile('write|create|compose|beat|programming|mix') #private composing, writing
 p_practice = re.compile('practice|drum') #private practice
 p_studio = re.compile('studio')
+p_produce = re.compile('produce|record')
 
 p_entertainment = re.compile('watch|movie|tv')
 p_social = re.compile('social')
@@ -127,7 +128,8 @@ music_amts = {
     'performance': 0,
     'write': 0,
     'practice': 0,
-    'studio': 0
+    'studio': 0,
+    'produce': 0
 }
 
 num_performances = 0
@@ -220,9 +222,9 @@ for line in data_reversed: #note we go FORWARDS in time
                     checked_categories.append('other')
 
                 #iterate through checked cats
-                print 'keys:'
+                # print 'keys:'
                 for key in checked_categories:
-                    print key
+                    # print key
                     category = categories[key]
                     amt_portion = amt / len(checked_categories)
                     #handling special cases
@@ -241,6 +243,8 @@ for line in data_reversed: #note we go FORWARDS in time
                             music_amts['practice'] += amt_portion
                         elif re.search(p_studio, last_category):
                             music_amts['studio'] += amt_portion
+                        elif re.search(p_produce, last_category):
+                            music_amts['produce'] += amt_portion
                         else:
                             music_amts['other'] += amt_portion
                             print last_category
@@ -270,17 +274,19 @@ categories['music']['amt'] = sum(music_amts.values())
 total_music = categories['music']['amt']
 
 print str(num_days) + ' days total'
-print str(num_days*24) + ' vs ' + str(total_mins/60)
+print str(num_days*24) + ' vs ' + str(total_mins/60) + '\n'
 
-for key in categories:
+print 'CATEGORIES:'
+for key in sorted(categories, key=categories.get, reverse=True):
     amt = categories[key]['amt']
     print key + ': ' + str(amt/60) + ' hours (' + str(round((amt/60)/num_days, 2)) + ' hrs/day, ' + str(round(100*(amt/60)/(total_mins/60), 2)) + '% of total)'
 
 print ''
+print 'MUSIC SUBCATEGORIES:'
+for amt in sorted(music_amts, key=music_amts.get, reverse=True):
+    print  str(amt) + ': ' + str(music_amts[amt]/60) + ' hours (' + str(round((music_amts[amt]/60)/num_days, 2)) + ' hrs/day, ' + str(round(100*(music_amts[amt]/60)/(total_music/60), 2)) + '% of all music)'
 
-for amt in music_amts:
-    print 'music_' + str(amt) + ': ' + str(music_amts[amt]/60) + ' hours (' + str(round((music_amts[amt]/60)/num_days, 2)) + ' hrs/day, ' + str(round(100*(music_amts[amt]/60)/(total_music/60), 2)) + '% of all music)'
-
+print ''
 print str(num_performances) + ' performances'
 print str(x_amt) + ' x\'s'
 avg_sleep_offset = (sum(sleep_times) / len(sleep_times)) / 60

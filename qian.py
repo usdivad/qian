@@ -6,14 +6,27 @@ import sys
 # start_date = []
 # end_date = []
 
-#Cmd-line args
-#e.g. for tour expenses go "python main.py 3/7 3/20"
-start_date = [int(i) for i in sys.argv[1].split("/")]
-end_date = [int(i) for i in sys.argv[2].split("/")]
-#print start_date + "-" + end_date
+print "\n+++$$${{QIAN}}$$$+++"
+start_date = [0, 0, 0]
+end_date = [123, 456, 7890]
+
+if len(sys.argv) > 2:
+    #Cmd-line args
+    #e.g. for tour expenses go "python main.py 3/7 3/20"
+    start_date = [int(i) for i in sys.argv[1].split("/")]
+    end_date = [int(i) for i in sys.argv[2].split("/")]
+else:
+    #Manual prompting
+    if raw_input("Would you like to specify a date range? (y/n)\n") == "y":
+        start_date = [int(i) for i in raw_input("Enter start date (MM/DD/YYYY):\n").split("/")]
+        end_date = [int(i) for i in raw_input("Enter end date (MM/DD/YYYY):\n").split("/")]
+    else:
+        print "OK, running on all dates.."
+
+print str(start_date) + " to " + str(end_date)
 
 #Imported data
-data = open("log.txt", "r")
+data = open("log_qian.txt", "r")
 
 #Regexes for params
 p_date = re.compile("\d{1,2}/\d{1,2}/\d+$")
@@ -47,7 +60,8 @@ for line in data:
         # day = date[0]
         # month = date[1]
         # year = date[2]
-        print date
+        
+        # print date
 
         #begin_counting = in_date_range(date, start_date, end_date)
         if begin_counting == False:

@@ -38,7 +38,7 @@ assert time_diff(2230, 145) == time_diff(1030, 1345)
 #Template from main.py
 
 #Regexes for params
-p_date = re.compile('\d{1,2}/\d{1,2}$')
+p_date = re.compile('\d{1,2}/\d{1,2}/\d+$')
 p_timemark = re.compile('^\d+(\.\d+)*(?=\s)')
 
 p_music = re.compile('music')
@@ -135,12 +135,15 @@ music_amts = {
 num_performances = 0
 
 #Params for parsing
+print "\n+++###((THYME))###+++"
+start_date = [0, 0, 0]
+end_date = [123, 456, 7890]
 data = open('log_thyme.txt', 'r')
 begin_counting = False
 last_category = 'sleep'
 current_category = 'sleep'
-start_date = []
-end_date = []
+# start_date = []
+# end_date = []
 sleep_times = []
 x_amt = 0
 total_mins = 0
@@ -164,26 +167,35 @@ for line in data:
 
 # print ''.join(data_reversed)
 
-#Cmd-line args
 if len(sys.argv) > 2:
+    #Cmd-line args
     start_date = [int(i) for i in sys.argv[1].split("/")]
     end_date = [int(i) for i in sys.argv[2].split("/")]
+else:
+    #Manual prompting
+    if raw_input("Would you like to specify a date range? (y/n)\n") == "y":
+        start_date = [int(i) for i in raw_input("Enter start date (MM/DD/YYYY):\n").split("/")]
+        end_date = [int(i) for i in raw_input("Enter end date (MM/DD/YYYY):\n").split("/")]
+    else:
+        print "OK, running on all dates.."
 print str(start_date) + "-" + str(end_date)
 
 for line in data_reversed: #note we go FORWARDS in time
     #it's a dateline
     if re.search(p_date, line):
         date = [int(i) for i in re.search(p_date, line).group().split("/")]
+        
+        # MM/DD/YYYY
         #begin_counting = in_date_range(date, start_date, end_date)
         if begin_counting == False:
-            # if (date[0] == end_date[0] and date[1] <= end_date[1]) or (date[0] < end_date[0]):
-            if (date[0] > start_date[0]) or (date[0] == start_date[0] and date[1] >= start_date[1]): 
+            # if (date[2] > start_date[2]) or (date[2] == start_date[2] and (date[1] > start_date[1] or (date[1] == start_date[1] and date[0] >= start_date[0]))):
+            if (date[2] > start_date[2]) or (date[2] == start_date[2] and (date[0] > start_date[0] or (date[0] == start_date[0] and date[1] >= start_date[1]))):
                 begin_counting = True
                 print "hooray! " + line
         else:
             num_days += 1
-            # if (date[0] == start_date[0] and date[1] <= start_date[1]) or (date[0] < start_date[0]):
-            if (date[0] > end_date[0]) or (date[0] == end_date[0] and date[1] >= end_date[1]):
+            # if (date[2] > end_date[2]) or (date[2] == end_date[2] and (date[1] > end_date[1] or (date[1] == end_date[1] and date[0] >= end_date[0]))):
+            if (date[2] > end_date[2]) or (date[2] == end_date[2] and (date[0] > end_date[0] or (date[0] == end_date[0] and date[1] >= end_date[1]))):
                 begin_counting = False
                 print "we're done " + line + " "
                 break
@@ -247,7 +259,7 @@ for line in data_reversed: #note we go FORWARDS in time
                             music_amts['produce'] += amt_portion
                         else:
                             music_amts['other'] += amt_portion
-                            print last_category
+                            # print last_category
                         # category['amt'] += amt_portion
                     elif key == 'social':
                         if 'x' in last_category:
@@ -259,6 +271,7 @@ for line in data_reversed: #note we go FORWARDS in time
                             amt_portion -= 60
                         categories['prgm']['amt'] += amt_portion * 0.7
                         categories['idle']['amt'] += amt_portion * (1 - 0.7)
+                        categories['work']['amt'] += amt_portion #just for bookkeeping
                     elif key == 'sleep':
                         if 'nap' not in last_category:
                             sleep_times.append(time_diff(1200, t0)) #offset from 12pm                      
@@ -272,6 +285,8 @@ for line in data_reversed: #note we go FORWARDS in time
 #any final computations
 categories['music']['amt'] = sum(music_amts.values())
 total_music = categories['music']['amt']
+total_work = categories.pop('work')['amt']
+# categories['work']['amt'] = 0
 
 print str(num_days) + ' days total'
 print str(num_days*24) + ' vs ' + str(total_mins/60) + '\n'
@@ -280,6 +295,7 @@ print 'CATEGORIES:'
 for key in sorted(categories, key=categories.get, reverse=True):
     amt = categories[key]['amt']
     print key + ': ' + str(amt/60) + ' hours (' + str(round((amt/60)/num_days, 2)) + ' hrs/day, ' + str(round(100*(amt/60)/(total_mins/60), 2)) + '% of total)'
+print '\nTOTAL WORK (divvied up into prgm+idle for above cats):\n' + str(total_work/60) + ' hours (' + str(round((total_work/60)/num_days, 2)) + ' hrs/day, ' + str(round(100*(total_work/60)/(total_mins/60), 2)) + '% of total)'
 
 print ''
 print 'MUSIC SUBCATEGORIES:'

@@ -2,26 +2,27 @@ import re
 import sys
 
 #Initial prompt
-# putty = raw_input("Enter 'all', 'range', or 'month':\n")
-# start_date = []
-# end_date = []
-
 print "\n+++$$${{QIAN}}$$$+++"
 start_date = [0, 0, 0]
-end_date = [123, 456, 7890]
+end_date = [12, 31, 3033]
+query_input = ""
 
+#Get arguments
 if len(sys.argv) > 2:
     #Cmd-line args
     #e.g. for tour expenses go "python main.py 3/7 3/20"
     start_date = [int(i) for i in sys.argv[1].split("/")]
     end_date = [int(i) for i in sys.argv[2].split("/")]
+    if len(sys.argv) > 3:
+        query_input = sys.argv[3]
 else:
     #Manual prompting
     if raw_input("Would you like to specify a date range? (y/n)\n") == "y":
         start_date = [int(i) for i in raw_input("Enter start date (MM/DD/YYYY):\n").split("/")]
         end_date = [int(i) for i in raw_input("Enter end date (MM/DD/YYYY):\n").split("/")]
-    else:
-        print "OK, running on all dates.."
+    # else:
+    #     print "OK, we'll run on all dates"
+    query_input = raw_input("Enter a custom search query ('PAID' to see earnings) or press Enter:\n")
 
 print str(start_date) + " to " + str(end_date)
 
@@ -38,6 +39,7 @@ p_rent = re.compile("rent|hotel|motel|deposit")
 p_travel = re.compile("taxi|cab|metrocard|sub|transit")
 p_entertainment = re.compile("concert|show|ticket|music")
 p_home = re.compile("home")
+p_query = re.compile(query_input)
 
 #Counting vars
 earnings = 0
@@ -49,6 +51,7 @@ other = 0
 travel = 0
 entertainment = 0
 home = 0
+query = 0
 num_days = 1
 num_months = 1
 
@@ -57,12 +60,13 @@ begin_counting = False
 for line in data:
     if re.search(p_date, line):
         date = [int(i) for i in re.search(p_date, line).group().split("/")]
-        # day = date[0]
-        # month = date[1]
+        # day = date[1]
+        # month = date[0]
         # year = date[2]
         
         # print date
 
+        # MM/DD/YYYY
         #begin_counting = in_date_range(date, start_date, end_date)
         if begin_counting == False:
             if (date[0] == end_date[0] and date[1] <= end_date[1] and date[2] == end_date[2]) or (date[0] < end_date[0] and date[2] <= end_date[2]) or date[2] < end_date[2]:
@@ -81,6 +85,12 @@ for line in data:
             if match != None:
                 amt = float(match.group()) #default group(0)
                 expenditure += amt
+
+                if re.search(p_query, line):
+                    query += amt
+                    if query_input != "":
+                        print query_input + ": " + line
+
                 if re.search(p_food, line):
                     food += amt
                     # print 'Food: ' + line 
@@ -113,7 +123,8 @@ for line in data:
                 if ematch != None:
                     amt = float(ematch.group().replace('+', ''))
                     earnings += amt
-                    print line
+                    if query_input == "PAID":
+                        print "PAID " + line
 
 num_months = num_days/30.5
 
@@ -126,8 +137,9 @@ print "travel: " + str(travel)
 print "entertainment: " + str(entertainment)
 print "home: " + str(home)
 print "other: " + str(other)
+if query_input != "":
+    print "(" + query_input + ": " + str(query) + ")"
 print "avg monthly exp (" + str(num_days) + " days over 30.5 days/month is " + str(num_months) + " months): " + str(expenditure/num_months)
-
 
 
 #def in_date_range(date, start, end):

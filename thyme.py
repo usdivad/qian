@@ -135,15 +135,14 @@ music_amts = {
 num_performances = 0
 
 #Params for parsing
-print "\n+++###((THYME))###+++"
+print '\n+++###((THYME))###+++'
 start_date = [0, 0, 0]
-end_date = [123, 456, 7890]
+end_date = [12, 31, 3033]
+query_input = ''
 data = open('log_thyme.txt', 'r')
 begin_counting = False
 last_category = 'sleep'
 current_category = 'sleep'
-# start_date = []
-# end_date = []
 sleep_times = []
 x_amt = 0
 total_mins = 0
@@ -160,8 +159,8 @@ for line in data:
 
         # setting start and end dates
         if len(end_date) < 1:
-            end_date = [int(i) for i in line.strip().split("/")]
-        start_date = [int(i) for i in line.strip().split("/")]
+            end_date = [int(i) for i in line.strip().split('/')]
+        start_date = [int(i) for i in line.strip().split('/')]
     else:
         date_chunk.append(line)
 
@@ -169,21 +168,29 @@ for line in data:
 
 if len(sys.argv) > 2:
     #Cmd-line args
-    start_date = [int(i) for i in sys.argv[1].split("/")]
-    end_date = [int(i) for i in sys.argv[2].split("/")]
+    start_date = [int(i) for i in sys.argv[1].split('/')]
+    end_date = [int(i) for i in sys.argv[2].split('/')]
+    if len(sys.argv) > 3:
+        query_input = sys.argv[3]
 else:
     #Manual prompting
-    if raw_input("Would you like to specify a date range? (y/n)\n") == "y":
-        start_date = [int(i) for i in raw_input("Enter start date (MM/DD/YYYY):\n").split("/")]
-        end_date = [int(i) for i in raw_input("Enter end date (MM/DD/YYYY):\n").split("/")]
-    else:
-        print "OK, running on all dates.."
-print str(start_date) + "-" + str(end_date)
+    if raw_input('Would you like to specify a date range? (y/n)\n') == 'y':
+        start_date = [int(i) for i in raw_input('Enter start date (MM/DD/YYYY):\n').split('/')]
+        end_date = [int(i) for i in raw_input('Enter end date (MM/DD/YYYY):\n').split('/')]
+    # else:
+    #     print 'OK, running on all dates..'
+    query_input = raw_input('Enter a custom search query or press Enter:\n')
+
+print str(start_date) + '-' + str(end_date)
+
+# Custom query
+query = 0
+p_query = re.compile(query_input)
 
 for line in data_reversed: #note we go FORWARDS in time
     #it's a dateline
     if re.search(p_date, line):
-        date = [int(i) for i in re.search(p_date, line).group().split("/")]
+        date = [int(i) for i in re.search(p_date, line).group().split('/')]
         
         # MM/DD/YYYY
         #begin_counting = in_date_range(date, start_date, end_date)
@@ -191,13 +198,13 @@ for line in data_reversed: #note we go FORWARDS in time
             # if (date[2] > start_date[2]) or (date[2] == start_date[2] and (date[1] > start_date[1] or (date[1] == start_date[1] and date[0] >= start_date[0]))):
             if (date[2] > start_date[2]) or (date[2] == start_date[2] and (date[0] > start_date[0] or (date[0] == start_date[0] and date[1] >= start_date[1]))):
                 begin_counting = True
-                print "hooray! " + line
+                print 'hooray! ' + line
         else:
             num_days += 1
             # if (date[2] > end_date[2]) or (date[2] == end_date[2] and (date[1] > end_date[1] or (date[1] == end_date[1] and date[0] >= end_date[0]))):
             if (date[2] > end_date[2]) or (date[2] == end_date[2] and (date[0] > end_date[0] or (date[0] == end_date[0] and date[1] >= end_date[1]))):
                 begin_counting = False
-                print "we're done " + line + " "
+                print 'we\'re done ' + line + ' '
                 break
 
     #it's a content line
@@ -220,6 +227,12 @@ for line in data_reversed: #note we go FORWARDS in time
 
                 last_category = current_category
                 current_category = line
+
+                #custom query
+                if re.search(query_input, last_category):
+                    query += amt
+                    if query_input != '':
+                        print query_input + ': ' + str(int(t0)) + '-' + str(int(t1)) + ' ' + re.sub('^\d+ ', '', last_category)
 
                 #check matching cats
                 checked_categories = []
@@ -310,10 +323,13 @@ avg_sleep_time = [int(avg_sleep_offset-12), int(((avg_sleep_offset-12)%1)*60)]
 # print sleep_times
 print 'avg sleep time of day: ' + ':'.join(str(i) for i in avg_sleep_time)
 
+print query_input + ': ' + str(query/60) 
+
 num_months = num_days/30.5
 
 '''
 todo:
     - dict it up
+    - display dates of events
 
 '''
